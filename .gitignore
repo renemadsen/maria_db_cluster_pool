@@ -1,0 +1,6 @@
+pkg
+tmp
+.idea
+.rvmrc
+Gemfile*
+do_tests.sh

@@ -1,0 +1,3 @@
+0.0.1
+
+Derive the prototype from seamless_database_pool
