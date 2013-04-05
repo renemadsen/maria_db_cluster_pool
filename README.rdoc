@@ -1,6 +1,27 @@
 == Database Cluster
 
+MariaDB Cluster Pool gem is designed for usage with Maria DB Galera Cluster, so this gem will only support a master/master setup
+
+= Configuration
+
+== The pool configuration
+
+The cluster connections are configured in database.yml using the maria_db_cluster_pool adapter. Any properties you configure for the connection will be inherited by all connections in the pool. In this way, you can configure ports, usernames, etc. once instead of for each connection. One exception is that you can set the pool_adapter property which each connection will inherit as the adapter property. Each connection in the pool uses all the same configuration properties as normal for the adapters.
+
 == Example configuration
+
+  development:
+      adapter: maria_db_cluster_pool
+      database: mydb_development
+      username: read_user
+      password: abc123
+      pool_adapter: mysql
+      port: 3306
+      server_pool:
+        - host: read-db-1.example.com
+          pool_weight: 1
+        - host: read-db-2.example.com
+          pool_weight: 2
 
 == License
 
