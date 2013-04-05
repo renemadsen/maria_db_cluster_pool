@@ -1,4 +1,4 @@
-#require File.join(File.dirname(__FILE__), 'mariadb_cluster_pool', 'connect_timeout.rb')
+require File.join(File.dirname(__FILE__), 'maria_db_cluster_pool', 'connect_timeout.rb')
 #require File.join(File.dirname(__FILE__), 'mariadb_cluster_pool', 'connection_statistics.rb')
 #require File.join(File.dirname(__FILE__), 'mariadb_cluster_pool', 'controller_filter.rb')
 require File.join(File.dirname(__FILE__), 'active_record', 'connection_adapters', 'maria_db_cluster_pool_adapter.rb')
@@ -19,7 +19,7 @@ module MariaDBClusterPool
   # Adapter name to class name map. This exists because there isn't an obvious way to translate things like
   # sqlite3 to SQLite3. The adapters that ship with ActiveRecord are defined here. If you use
   # an adapter that doesn't translate directly to camel case, then add the mapping here in an initializer.
-  #ADAPTER_TO_CLASS_NAME_MAP = {"sqlite" => "SQLite", "sqlite3" => "SQLite3", "postgresql" => "PostgreSQL"}
+  ADAPTER_TO_CLASS_NAME_MAP = {"sqlite" => "SQLite", "sqlite3" => "SQLite3", "postgresql" => "PostgreSQL"}
   
   #READ_CONNECTION_METHODS = [:master, :persistent, :random]
 
@@ -88,10 +88,10 @@ module MariaDBClusterPool
     #  return connection_type
     #end
   
-    # Get a read only connection from a connection pool.
-    #def read_only_connection(pool_connection)
-    #  return pool_connection.master_connection if pool_connection.using_master_connection?
-    #  connection_type = Thread.current[:read_only_connection]
+    # Get a connection from a connection pool.
+    #def get_a_connection(pool_connection)
+    #  #return pool_connection.master_connection if pool_connection.using_master_connection?
+    #  #connection_type = Thread.current[:read_only_connection]
     #
     #  if connection_type.kind_of?(Hash)
     #    connection = connection_type[pool_connection]

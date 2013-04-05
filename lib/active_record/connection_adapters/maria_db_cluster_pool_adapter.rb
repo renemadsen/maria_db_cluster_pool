@@ -1,3 +1,5 @@
+require 'maria_db_cluster_pool/connect_timeout'
+
 module ActiveRecord
   class Base
     class << self
@@ -13,28 +15,33 @@ module ActiveRecord
         config[:server_pool].each do |server_config|
           server_config = default_config.merge(server_config).with_indifferent_access
           server_config[:pool_weight] = server_config[:pool_weight].to_i
-          if server_config[:pool_weight] > 0
+          #if server_config[:pool_weight] > 0
             begin
               establish_adapter(server_config[:adapter])
+              puts "Sending down this conf #{server_config.inspect}"
               conn = send("#{server_config[:adapter]}_connection".to_sym, server_config)
               conn.class.send(:include, MariaDBClusterPool::ConnectTimeout) unless conn.class.include?(MariaDBClusterPool::ConnectTimeout)
               conn.connect_timeout = server_config[:connect_timeout]
               pool_connections << conn
               pool_weights[conn] = server_config[:pool_weight]
             rescue Exception => e
+              puts "Error connecting to read connection #{server_config.inspect}"
+              puts "The error was #{e.message}"
+              puts "And the backtrace is #{e.backtrace.inspect}"
               if logger
                 logger.error("Error connecting to read connection #{server_config.inspect}")
                 logger.error(e)
+                #logger.error("Backtrace is #{e.backtrace.inspect}")
               end
             end
-          end
+          #end
         end if config[:server_pool]
 
         @maria_db_cluster_pool_classes ||= {}
-        klass = @maria_db_cluster_pool_classes[pool_connections.first.class]
+        klass = @maria_db_cluster_pool_classes[pool_connections[0].class]
         unless klass
-          klass = ActiveRecord::ConnectionAdapters::MariaDBClusterPoolAdapter.adapter_class(pool_connections.first)
-          @maria_db_cluster_pool_classes[pool_connections.first.class] = klass
+          klass = ActiveRecord::ConnectionAdapters::MariaDBClusterPoolAdapter.adapter_class(pool_connections[0])
+          @maria_db_cluster_pool_classes[pool_connections[0].class] = klass
         end
 
         return klass.new(nil, logger, pool_connections, pool_weights)
@@ -69,8 +76,8 @@ module ActiveRecord
       end
       
       # Force reload to use the master connection since it's probably being called for a reason.
-      def reload_with_MariaDB_Cluster_Pool(*args)
-        reload_without_MariaDB_Cluster_Pool(*args)
+      def reload_with_maria_db_cluster_pool(*args)
+        reload_without_maria_db_Cluster_Pool(*args)
       end
     end
     
@@ -80,7 +87,7 @@ module ActiveRecord
   module ConnectionAdapters
     class MariaDBClusterPoolAdapter < AbstractAdapter
       
-      attr_reader :connections
+      attr_reader :connections, :master_connection
       
       class << self
         # Create an anonymous class that extends this one and proxies methods to the pool connections.
@@ -106,14 +113,12 @@ module ActiveRecord
           master_methods.each do |method_name|
             klass.class_eval <<-EOS, __FILE__, __LINE__ + 1
               def #{method_name}(*args, &block)
-                use_master_connection do
-                  return proxy_connection_method(master_connection, :#{method_name}, :master, *args, &block)
-                end
+                return proxy_connection_method(master_connection, :#{method_name}, *args, &block)
               end
             EOS
           end
 
-          klass.send :protected, :select
+          #klass.send :protected, :select
         
           return klass
         end
@@ -129,15 +134,22 @@ module ActiveRecord
       end
       
       def initialize(connection, logger, connections, pool_weights)
+        #@logger.warn("\n")
         super(connection, logger)
-        
+
+        @master_connection = connections[0]
         @connections = connections.dup.freeze
         
         @weighted_connections = []
+        @logger.warn("\n--- initialize ---")
+
         pool_weights.each_pair do |conn, weight|
-          weight.times{@weighted_connections << conn}
+          @logger.warn("\n conn is #{conn}")
+          @logger.warn("\n weight is #{weight}")
+          @weighted_connections << conn
         end
-        @available_connections = [AvailableConnections.new(@weighted_connections)]
+        @logger.warn("\n#{@weighted_connections.inspect}")
+        @available_connections = AvailableConnections.new(@weighted_connections)
       end
       
       def adapter_name #:nodoc:
@@ -214,8 +226,11 @@ module ActiveRecord
         end
 
         def reconnect!
-          failed_connection.reconnect!
-          raise DatabaseConnectionError.new unless failed_connection.active?
+          @failed_connection.reconnect!
+          @connections.push @failed_connection
+          @failed_connection = nil
+          @expires = nil
+          raise DatabaseConnectionError.new unless @failed_connection.active?
         end
       end
       
@@ -223,7 +238,7 @@ module ActiveRecord
       # be temporarily removed from the read pool so we don't keep trying to reconnect to a database that isn't
       # listening.
       def available_connections
-        available = @available_connections.last
+        available = @available_connections
         if available.expired?
           begin
             @logger.info("Adding dead database connection back to the pool") if @logger
@@ -260,11 +275,14 @@ module ActiveRecord
       
       # Temporarily remove a connection from the read pool.
       def suppress_connection(conn, expire)
+        @logger.warn("\nsuppress_connection conn: #{conn.inspect}")
         available = available_connections
+        @logger.warn("\nsuppress_connection available: #{available.inspect}")
         connections = available.reject{|c| c == conn}
+        @logger.warn("\nsuppress_connection connections: #{connections.inspect}")
 
         # This wasn't a read connection so don't suppress it
-        return if connections.length == available.length
+        #return if connections.length == available.length
 
         if connections.empty?
           @logger.warn("All read connections are marked dead; trying them all again.") if @logger
@@ -273,7 +291,11 @@ module ActiveRecord
         else
           @logger.warn("Removing #{conn.inspect} from the connection pool for #{expire} seconds") if @logger
           # Available connections will now not include the suppressed connection for a while
-          @available_connections.push(AvailableConnections.new(connections, conn, expire.seconds.from_now))
+          #@available_connections.push(
+          @logger.warn("\nsuppress_connection before @available_connections: #{@available_connections.inspect}")
+          @available_connections = AvailableConnections.new(connections, conn, expire.seconds.from_now)
+          @logger.warn("\nsuppress_connection after @available_connections: #{@available_connections.inspect}")
+
         end
       end
       
@@ -282,12 +304,33 @@ module ActiveRecord
       def proxy_connection_method(connection, method, *args, &block)
         begin
           connection.send(method, *args, &block)
+        rescue ArgumentError
+          begin
+            connection.send(method, *args)
+          rescue ArgumentError
+            connection.send(method)
+          end
         rescue => e
+          if @logger
+            @logger.warn("Error in proxy_connection_method")
+            @logger.warn("The method is #{method}")
+            #@logger.warn("The ars are #{*args}")
+            #@logger.warn("The block is #{&block.inspect}")
+            @logger.warn(e.message)
+            @logger.warn(e.class)
+            @logger.warn(e.backtrace.inspect)
+          end
           # If the statement was a read statement and it wasn't forced against the master connection
           # try to reconnect if the connection is dead and then re-run the statement.
           unless connection.active?
+            if @logger
+              @logger.warn("Error in proxy_connection_method")
+              @logger.warn("connection is not active")
+            end
+            @logger.warn("The connection was #{connection.inspect}")
             suppress_connection(connection, 30)
-            connection = @available_connections.last
+            connection = @available_connections.connections.last
+            @logger.warn("The connection is now #{connection.inspect}")
           end
           proxy_connection_method(connection, method, *args, &block)
         end
