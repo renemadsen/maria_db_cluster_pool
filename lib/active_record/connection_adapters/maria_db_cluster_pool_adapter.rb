@@ -83,7 +83,7 @@ module ActiveRecord
       attr_reader :connections # The total sum of connections
       attr_reader :master_connection # The current connection in use
       attr_reader :available_connections # The list of connections usable to the class
-      
+
       class << self
         # Create an anonymous class that extends this one and proxies methods to the pool connections.
         def adapter_class(master_connection)
@@ -128,8 +128,6 @@ module ActiveRecord
       
       def initialize(connection, logger, connections, pool_weights)
         super(connection, logger)
-
-        @logger.warn("We got initialize")
 
         @available_connections = []
         @master_connection = connection
@@ -232,9 +230,10 @@ module ActiveRecord
           if a != nil
             if a.expired?
               begin
-              @logger.info("Adding dead database connection back to the pool") if @logger
+              @logger.info("Adding dead database connection back to the pool : #{a.connection.inspect}") if @logger
               a.reconnect!
-              rescue
+              rescue  => e
+                a.expires = 30.seconds.from_now
                 @logger.warn("Failed to reconnect to database when adding connection back to the pool")
                 @logger.warn(e)
               end
@@ -257,11 +256,12 @@ module ActiveRecord
       # Temporarily remove a connection from the read pool.
       def suppress_connection(conn, expire)
         available = available_connections
-        available.each do |u|
-          if u != nil
-            if u.connection == conn
-              u.failed_connection = true
-              u.expires = expire.seconds.from_now
+        available.each do |a|
+          if a != nil
+            if a.connection == conn
+              a.failed_connection = true
+              a.expires = expire.seconds.from_now
+              @logger.info("Supressing database connection from the pool : #{a.connection.inspect}") if @logger
             end
           end
         end
@@ -273,6 +273,7 @@ module ActiveRecord
           if a != nil
             unless a.failed?
               if a.connection.active?
+                @logger.info("New master connection is now : #{a.connection.inspect}") if @logger
                 @master_connection = a.connection
                 break
               end
@@ -280,10 +281,11 @@ module ActiveRecord
           end
         end
       end
-      
+
       private
       
       def proxy_connection_method(connection, method, *args, &block)
+        available_connections
         begin
           connection.send(method, *args, &block)
         rescue ArgumentError
@@ -292,21 +294,10 @@ module ActiveRecord
           rescue ArgumentError
             connection.send(method)
           end
-        rescue => e
-          if @logger
-            @logger.warn("Error in proxy_connection_method")
-            @logger.warn("The connection is #{connection.inspect}")
-            @logger.warn(e.message)
-            @logger.warn(e.class)
-            @logger.warn(e.backtrace.inspect)
-          end
+        rescue
           # If the statement was a read statement and it wasn't forced against the master connection
           # try to reconnect if the connection is dead and then re-run the statement.
           unless connection.active?
-            if @logger
-              @logger.warn("Error in proxy_connection_method")
-              @logger.warn("connection is not active")
-            end
             suppress_connection(@master_connection, 30)
             next_usable_connection
           end
