@@ -4,3 +4,4 @@ tmp
 .rvmrc
 Gemfile*
 do_tests.sh
+*.gem
