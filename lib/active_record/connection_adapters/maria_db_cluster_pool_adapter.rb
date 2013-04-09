@@ -62,19 +62,6 @@ module ActiveRecord
         end
       end
     end
-    
-    module MariaDBClusterPoolBehavior
-      def self.included(base)
-        base.alias_method_chain(:reload, :maria_db_cluster_pool)
-      end
-      
-      # Force reload to use the master connection since it's probably being called for a reason.
-      def reload_with_maria_db_cluster_pool(*args)
-        reload_without_maria_db_Cluster_Pool(*args)
-      end
-    end
-    
-    include(MariaDBClusterPoolBehavior) unless include?(MariaDBClusterPoolBehavior)
   end
 
   module ConnectionAdapters

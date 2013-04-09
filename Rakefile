@@ -65,6 +65,7 @@ begin
   Jeweler::Tasks.new do |gem|
     gem.name = "maria_db_cluster_pool"
     gem.summary = "Add support for master/master database clusters in ActiveRecord to improve performance."
+    gem.description = "This gem add support for the Maria DB Galera Cluster setup."
     gem.email = "rm@microting.com"
     gem.homepage = "https://github.com/renemadsen/maria_db_cluster_pool"
     gem.authors = ["René Schultz Madsen"]

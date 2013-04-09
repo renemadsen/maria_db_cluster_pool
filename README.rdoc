@@ -17,6 +17,7 @@ The cluster connections are configured in database.yml using the maria_db_cluste
       password: abc123
       pool_adapter: mysql
       port: 3306
+      encoding: utf8
       server_pool:
         - host: read-db-1.example.com
           pool_weight: 1
