@@ -1,0 +1,16 @@
+# This file contains the databases that the test suite will be run against if you run rake:test:adapters or set the
+# environment variable ADAPTER (use commas to test multiple adapters). If you want, you can add your own adapter below
+# and it will be added to the test suite.
+
+mysql:
+  adapter: maria_db_cluster_pool
+  database: maria_db_cluster_pool_test
+  username: root
+  password:
+  encoding: utf-8
+  host: localhost
+  server_pool:
+    - adapter: read_only
+      real_adapter: mysql
+      host: localhost
+      pool_weight: 0

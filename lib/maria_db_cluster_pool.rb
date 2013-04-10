@@ -14,7 +14,7 @@ $LOAD_PATH << File.dirname(__FILE__) unless $LOAD_PATH.include?(File.dirname(__F
 # will set the read connection type only within the block. Otherwise they will set the default
 # read connection type. If none is ever called, the read connection type will be :master.
 
-module MariaDBClusterPool
+module MariaDbClusterPool
     
   # Adapter name to class name map. This exists because there isn't an obvious way to translate things like
   # sqlite3 to SQLite3. The adapters that ship with ActiveRecord are defined here. If you use

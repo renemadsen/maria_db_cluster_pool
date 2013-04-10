@@ -1,6 +1,6 @@
 require 'timeout'
 
-module MariaDBClusterPool
+module MariaDbClusterPool
   # This module is mixed into connection adapters to allow the reconnect! method to timeout if the
   # IP address becomes unreachable. The default timeout is 1 second, but you can change it by setting
   # the connect_timeout parameter in the adapter configuration.

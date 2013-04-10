@@ -1,5 +1,3 @@
-require 'maria_db_cluster_pool/connect_timeout'
-
 module ActiveRecord
   class Base
     class << self
@@ -18,7 +16,7 @@ module ActiveRecord
           begin
             establish_adapter(server_config[:adapter])
             conn = send("#{server_config[:adapter]}_connection".to_sym, server_config)
-            conn.class.send(:include, MariaDBClusterPool::ConnectTimeout) unless conn.class.include?(MariaDBClusterPool::ConnectTimeout)
+            conn.class.send(:include, MariaDbClusterPool::ConnectTimeout) unless conn.class.include?(MariaDbClusterPool::ConnectTimeout)
             conn.connect_timeout = server_config[:connect_timeout]
             pool_connections << conn
             pool_weights[conn] = server_config[:pool_weight]
@@ -33,7 +31,7 @@ module ActiveRecord
         @maria_db_cluster_pool_classes ||= {}
         klass = @maria_db_cluster_pool_classes[pool_connections[0].class]
         unless klass
-          klass = ActiveRecord::ConnectionAdapters::MariaDBClusterPoolAdapter.adapter_class(pool_connections[0])
+          klass = ActiveRecord::ConnectionAdapters::MariaDbClusterPoolAdapter.adapter_class(pool_connections[0])
           @maria_db_cluster_pool_classes[pool_connections[0].class] = klass
         end
 
@@ -65,7 +63,7 @@ module ActiveRecord
   end
 
   module ConnectionAdapters
-    class MariaDBClusterPoolAdapter < AbstractAdapter
+    class MariaDbClusterPoolAdapter < AbstractAdapter
       
       attr_reader :connections # The total sum of connections
       attr_reader :master_connection # The current connection in use
@@ -109,7 +107,7 @@ module ActiveRecord
           # visitor. There is a note in the code indicating the method signatures should be updated.
           config = pool.spec.config.with_indifferent_access
           adapter = config[:master][:adapter] || config[:pool_adapter]
-          MariaDBClusterPool.adapter_class_for(adapter).visitor_for(pool)
+          MariaDbClusterPool.adapter_class_for(adapter).visitor_for(pool)
         end
       end
       
@@ -221,8 +219,8 @@ module ActiveRecord
               a.reconnect!
               rescue  => e
                 a.expires = 30.seconds.from_now
-                @logger.warn("Failed to reconnect to database when adding connection back to the pool")
-                @logger.warn(e)
+                @logger.warn("Failed to reconnect to database when adding connection back to the pool") if @logger
+                @logger.warn(e) if @logger
               end
             end
           end
@@ -281,7 +279,7 @@ module ActiveRecord
           rescue ArgumentError
             connection.send(method)
           end
-        rescue
+        rescue => e
           # If the statement was a read statement and it wasn't forced against the master connection
           # try to reconnect if the connection is dead and then re-run the statement.
           unless connection.active?

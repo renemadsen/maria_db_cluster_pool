@@ -1,15 +1,16 @@
-== Database Cluster
+# Database Cluster [![Build Status](https://travis-ci.org/renemadsen/maria_db_cluster_pool.png)](https://travis-ci.org/renemadsen/maria_db_cluster_pool)
 
 MariaDB Cluster Pool gem is designed for usage with Maria DB Galera Cluster, so this gem will only support a master/master setup
 
-= Configuration
+# Configuration
 
-== The pool configuration
+## The pool configuration
 
 The cluster connections are configured in database.yml using the maria_db_cluster_pool adapter. Any properties you configure for the connection will be inherited by all connections in the pool. In this way, you can configure ports, usernames, etc. once instead of for each connection. One exception is that you can set the pool_adapter property which each connection will inherit as the adapter property. Each connection in the pool uses all the same configuration properties as normal for the adapters.
 
-== Example configuration
+### Example configuration
 
+```ruby
   development:
       adapter: maria_db_cluster_pool
       database: mydb_development
@@ -23,22 +24,27 @@ The cluster connections are configured in database.yml using the maria_db_cluste
           pool_weight: 1
         - host: read-db-2.example.com
           pool_weight: 2
+```
 
-== Rails 2.3.x
+## Rails 2.3.x
 
 To make rake db:migrate, rake db:seed work, remember to put:
 
-config.gem 'maria_db_cluster_pool'
+```ruby
+  config.gem 'maria_db_cluster_pool'
+```
 
 in the environment.rb
 
-== Known issues:
+## Known issues:
 
-rake db:test:clone
+```ruby
+  rake db:test:clone
+```
 
 will not work.
 
-== License
+## License
 
 This software is a derived work of https://github.com/bdurand/seamless_database_pool the parts which derives from that codes is copyrighted by Brian Durand
 
