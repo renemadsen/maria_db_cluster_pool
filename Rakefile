@@ -59,26 +59,3 @@ rescue LoadError
     STDERR.puts "You must have rspec >= 2.0 to run the tests"
   end
 end
-
-begin
-  require 'jeweler'
-  Jeweler::Tasks.new do |gem|
-    gem.name = "maria_db_cluster_pool"
-    gem.summary = "Add support for master/master database clusters in ActiveRecord to improve performance."
-    gem.description = "This gem add support for the Maria DB Galera Cluster setup."
-    gem.email = "rm@microting.com"
-    gem.homepage = "https://github.com/renemadsen/maria_db_cluster_pool"
-    gem.authors = ["René Schultz Madsen"]
-    gem.files = FileList["lib/**/*", "spec/**/*", "README.rdoc", "Rakefile", "MIT-LICENSE"].to_a
-    gem.has_rdoc = true
-    gem.extra_rdoc_files = ["README.rdoc", "MIT-LICENSE"]
-  
-    gem.add_dependency('activerecord', '>= 2.2.2')
-    gem.add_development_dependency('rspec', '>= 2.0')
-    gem.add_development_dependency('jeweler')
-    gem.add_development_dependency('mysql')
-  end
-
-  Jeweler::GemcutterTasks.new
-rescue LoadError
-end

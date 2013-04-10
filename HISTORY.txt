@@ -1,3 +1,11 @@
+0.0.5
+
+Improving gem specification and the readme.
+
+0.0.4
+
+Fixing the issue with reloading an object.
+
 0.0.3
 
 Derive the prototype from seamless_database_pool
