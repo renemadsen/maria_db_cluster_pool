@@ -28,16 +28,14 @@ The cluster connections are configured in database.yml using the maria_db_cluste
 
 To make rake db:migrate, rake db:seed work, remember to put:
 
-=begin ruby
 config.gem 'maria_db_cluster_pool'
-=end
+
 in the environment.rb
 
 == Known issues:
 
-=begin bash
 rake db:test:clone
-=end
+
 will not work.
 
 == License
