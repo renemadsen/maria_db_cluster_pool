@@ -2,6 +2,6 @@ pkg
 tmp
 .idea
 .rvmrc
-Gemfile*
+Gemfile.lock
 do_tests.sh
 *.gem
