@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{maria_db_cluster_pool}
-  s.version = "0.0.5"
+  s.version = "0.0.6"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Ren\303\251 Schultz Madsen"]
@@ -11,11 +11,11 @@ Gem::Specification.new do |s|
   s.email = %q{rm@microting.com}
   s.extra_rdoc_files = [
     "MIT-LICENSE",
-    "README.rdoc"
+    "README.md"
   ]
   s.files = [
     "MIT-LICENSE",
-    "README.rdoc",
+    "README.md",
     "Rakefile",
     "lib/active_record/connection_adapters/maria_db_cluster_pool_adapter.rb",
     "lib/maria_db_cluster_pool.rb",
