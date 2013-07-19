@@ -2,13 +2,14 @@
 
 Gem::Specification.new do |s|
   s.name = %q{maria_db_cluster_pool}
-  s.version = "0.0.6"
+  s.version = "0.0.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Ren\303\251 Schultz Madsen"]
   s.date = Date.today.to_s
   s.description = %q{This gem add support for the Maria DB Galera Cluster setup.}
   s.email = %q{rm@microting.com}
+  s.license = 'MIT'
   s.extra_rdoc_files = [
     "MIT-LICENSE",
     "README.md"

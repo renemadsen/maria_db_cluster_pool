@@ -44,9 +44,13 @@ in the environment.rb
 
 will not work.
 
-## License
+## Credits
 
 This software is a derived work of https://github.com/bdurand/seamless_database_pool the parts which derives from that codes is copyrighted by Brian Durand
+
+## License
+
+The MIT License (MIT)
 
 Copyright (C) 2013 Microting A/S
 
