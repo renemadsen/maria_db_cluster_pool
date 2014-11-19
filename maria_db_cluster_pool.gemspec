@@ -28,9 +28,16 @@ Gem::Specification.new do |s|
   s.rubygems_version = %q{1.5.3}
   s.summary = %q{Add support for master/master database clusters in ActiveRecord to improve performance.}
 
-  s.add_dependency(%q<activerecord>, [">= 2.3.11"])
-  s.add_dependency(%q<rake>, [">= 0.8.7"])
-  s.add_dependency(%q<mysql>, [">= 0"])
-  s.add_development_dependency(%q<rspec>, [">= 0"])
+  if Gem::Version.new(Gem::VERSION) <= Gem::Version.new('1.5.3') then
+    s.add_dependency(%q<activerecord>, [">= 2.3.11"])
+    s.add_dependency(%q<rake>, [">= 0.8.7"])
+    s.add_dependency(%q<mysql>, [">= 0"])
+    s.add_development_dependency(%q<rspec>, [">= 0"])
+  else
+    s.add_dependency(%q<activerecord>, [">= 3.2.13"])
+    s.add_dependency(%q<rake>, [">= 0.8.7"])
+    s.add_dependency(%q<mysql2>, [">= 0"])
+    s.add_development_dependency(%q<rspec>, [">= 0"])
+  end
 end
 
