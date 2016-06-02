@@ -5,12 +5,13 @@
 mysql:
   adapter: maria_db_cluster_pool
   database: maria_db_cluster_pool_test
+  prepared_statements: false
   username: root
+  reconnect: true
   password:
-  encoding: utf-8
+#  encoding: utf-8 # Currently not working
   host: localhost
+  pool_adapter: mysql2
   server_pool:
-    - adapter: read_only
-      real_adapter: mysql
-      host: localhost
+    - host: localhost
       pool_weight: 0

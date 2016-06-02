@@ -16,8 +16,9 @@ module ActiveRecord
           begin
             establish_adapter(server_config[:adapter])
             conn = send("#{server_config[:adapter]}_connection".to_sym, server_config)
-            conn.class.send(:include, MariaDbClusterPool::ConnectTimeout) unless conn.class.include?(MariaDbClusterPool::ConnectTimeout)
-            conn.connect_timeout = server_config[:connect_timeout]
+            # conn.class.send(:include, MariaDbClusterPool::ConnectTimeout) unless conn.class.include?(MariaDbClusterPool::ConnectTimeout)
+            # conn.connect_timeout = server_config[:connect_timeout]
+
             pool_connections << conn
             pool_weights[conn] = server_config[:pool_weight]
           rescue Exception => e
@@ -30,7 +31,7 @@ module ActiveRecord
 
         @maria_db_cluster_pool_classes ||= {}
         klass = @maria_db_cluster_pool_classes[pool_connections[0].class]
-        unless klass
+        unless klass.present?
           klass = ActiveRecord::ConnectionAdapters::MariaDbClusterPoolAdapter.adapter_class(pool_connections[0])
           @maria_db_cluster_pool_classes[pool_connections[0].class] = klass
         end
@@ -46,10 +47,10 @@ module ActiveRecord
           require 'rubygems'
           gem "activerecord-#{adapter}-adapter"
           require "active_record/connection_adapters/#{adapter}_adapter"
-        rescue LoadError
+        rescue LoadError => e
           begin
             require "active_record/connection_adapters/#{adapter}_adapter"
-          rescue LoadError
+          rescue LoadError => ee
             raise "Please install the #{adapter} adapter: `gem install activerecord-#{adapter}-adapter` (#{$!})"
           end
         end
@@ -60,6 +61,8 @@ module ActiveRecord
         end
       end
     end
+
+    # include(MariaDbClusterPoolAdapter) unless include?(MariaDbClusterPoolAdapter)
   end
 
   module ConnectionAdapters
@@ -112,11 +115,12 @@ module ActiveRecord
       end
       
       def initialize(connection, logger, connections, pool_weights)
-        super(connection, logger)
-
+        # @available_connections = connections.dup.freeze
+        @connections = connections.dup.freeze
         @available_connections = []
         @master_connection = connection
-        @connections = connections.dup.freeze
+
+        super(connection, logger)
 
         pool_weights.each_pair do |conn, weight|
           @available_connections[weight] = AvailableConnection.new(conn)
@@ -174,7 +178,7 @@ module ActiveRecord
 
       class DatabaseConnectionError < StandardError
       end
-      
+
       # This simple class puts an expire time on an array of connections. It is used so the a connection
       # to a down database won't try to reconnect over and over.
       class AvailableConnection
@@ -227,7 +231,30 @@ module ActiveRecord
         end
 
         @available_connections
-
+        # available = @available_connections.last
+        # if available.expired?
+        #   begin
+        #     @logger.info("Adding dead database connection back to the pool") if @logger
+        #     available.reconnect!
+        #   rescue => e
+        #     # Couldn't reconnect so try again in a little bit
+        #     if @logger
+        #       @logger.warn("Failed to reconnect to database when adding connection back to the pool")
+        #       @logger.warn(e)
+        #     end
+        #     available.expires = 30.seconds.from_now
+        #     return available.connections
+        #   end
+        #
+        #   # If reconnect is successful, the connection will have been re-added to @available_read_connections list,
+        #   # so let's pop this old version of the connection
+        #   @available_connections.pop
+        #
+        #   # Now we'll try again after either expiring our bad connection or re-adding our good one
+        #   return available_connections
+        # else
+        #   return available.connections
+        # end
       end
       
       def reset_available_connections
